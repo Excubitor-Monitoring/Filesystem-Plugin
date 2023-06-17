@@ -70,9 +70,28 @@ func ParseBlockDevices() ([]BlockDevice, error) {
 					return nil, fmt.Errorf("error on parsing size of partition %s: %w", block.Name(), err)
 				}
 
-				mountPoints, err := getMountPoints(content.Name())
-				if err != nil {
-					return nil, fmt.Errorf("error on getting mount points for partition %s: %w", content.Name(), err)
+				var mountPoints []MountPoint
+
+				holdersFolder, err := os.ReadDir("/sys/block/" + block.Name() + "/" + content.Name() + "/holders")
+				if len(holdersFolder) != 0 {
+					for _, holder := range holdersFolder {
+						if strings.HasPrefix(holder.Name(), "dm") {
+							dmName, err := os.ReadFile("/sys/block/" + block.Name() + "/" + content.Name() + "/holders/" + holder.Name() + "/dm/name")
+							if err != nil {
+								return nil, fmt.Errorf("error when reading name of device mapper partition name of %s: %w", content.Name(), err)
+							}
+
+							mountPoints, err = getMountPoints("mapper/" + string(dmName)[:len(dmName)-1])
+							if err != nil {
+								return nil, fmt.Errorf("error on getting mount points for device mapper volume %s of partition %s: %w", dmName, content.Name(), err)
+							}
+						}
+					}
+				} else {
+					mountPoints, err = getMountPoints(content.Name())
+					if err != nil {
+						return nil, fmt.Errorf("error on getting mount points for partition %s: %w", content.Name(), err)
+					}
 				}
 
 				if len(mountPoints) > 0 {
@@ -94,8 +113,9 @@ func ParseBlockDevices() ([]BlockDevice, error) {
 						partition.MountPoints = append(partition.MountPoints, mp.Path)
 					}
 
-					partitions = append(partitions, partition)
 				}
+
+				partitions = append(partitions, partition)
 			}
 		}
 
