@@ -10,12 +10,6 @@ import (
 	"syscall"
 )
 
-type BlockDevice struct {
-	Name       string      `json:"name"`
-	Size       uint64      `json:"size"`
-	Partitions []Partition `json:"partitions"`
-}
-
 type Partition struct {
 	Name           string       `json:"name"`
 	Size           uint64       `json:"size"`
@@ -23,52 +17,6 @@ type Partition struct {
 	FilesystemType string       `json:"type"`
 	Filesystem     string       `json:"filesystem"`
 	MountPoints    []MountPoint `json:"mount_points"`
-}
-
-func ParseBlockDevices() ([]BlockDevice, error) {
-	blockDevices := make([]BlockDevice, 0)
-
-	blockDevicesFolder, err := os.ReadDir("/sys/block")
-	if err != nil {
-		return nil, fmt.Errorf("error on reading block devices: %w", err)
-	}
-
-	for _, block := range blockDevicesFolder {
-		blockDeviceFolderFS := os.DirFS("/sys/block/" + block.Name())
-
-		sizeFile, err := fs.ReadFile(blockDeviceFolderFS, "size")
-		if err != nil {
-			return nil, fmt.Errorf("error on reading size of block device %s: %w", block.Name(), err)
-		}
-
-		size, err := strconv.ParseUint(string(sizeFile)[:len(sizeFile)-1], 10, 32)
-		if err != nil {
-			return nil, fmt.Errorf("error on parsing size of block device %s: %w", block.Name(), err)
-		}
-
-		partitions, err := getPartitions(block.Name())
-		if err != nil {
-			return nil, fmt.Errorf("error on getting partitions of block device %s: %w", block.Name(), err)
-		}
-
-		device := BlockDevice{
-			Name:       block.Name(),
-			Size:       size / 2,
-			Partitions: partitions,
-		}
-
-		blockDevices = append(blockDevices, device)
-	}
-
-	return blockDevices, nil
-}
-
-type MountOption [2]string
-
-type MountPoint struct {
-	Path       string
-	Filesystem string
-	Options    []MountOption
 }
 
 func getPartitions(blockDeviceName string) ([]Partition, error) {
@@ -84,7 +32,7 @@ func getPartitions(blockDeviceName string) ([]Partition, error) {
 			var partition Partition
 			partition.Name = content.Name()
 
-			partitionFolderFS := os.DirFS("/sys/block/" + blockDeviceName + "/" + content.Name())
+			partitionFolderFS := os.DirFS("/sys/block/" + blockDeviceName + "/" + partition.Name)
 
 			partitionSizeFile, err := fs.ReadFile(partitionFolderFS, "size")
 			if err != nil {
@@ -98,25 +46,25 @@ func getPartitions(blockDeviceName string) ([]Partition, error) {
 
 			var mountPoints []MountPoint
 
-			holdersFolder, err := os.ReadDir("/sys/block/" + blockDeviceName + "/" + content.Name() + "/holders")
+			holdersFolder, err := os.ReadDir("/sys/block/" + blockDeviceName + "/" + partition.Name + "/holders")
 			if len(holdersFolder) != 0 {
 				for _, holder := range holdersFolder {
 					if strings.HasPrefix(holder.Name(), "dm") {
-						dmName, err := os.ReadFile("/sys/block/" + blockDeviceName + "/" + content.Name() + "/holders/" + holder.Name() + "/dm/name")
+						dmName, err := os.ReadFile("/sys/block/" + blockDeviceName + "/" + partition.Name + "/holders/" + holder.Name() + "/dm/name")
 						if err != nil {
-							return nil, fmt.Errorf("error when reading name of device mapper partition name of %s: %w", content.Name(), err)
+							return nil, fmt.Errorf("error when reading name of device mapper partition name of %s: %w", partition.Name, err)
 						}
 
 						mountPoints, err = getMountPoints("mapper/" + string(dmName)[:len(dmName)-1])
 						if err != nil {
-							return nil, fmt.Errorf("error on getting mount points for device mapper volume %s of partition %s: %w", dmName, content.Name(), err)
+							return nil, fmt.Errorf("error on getting mount points for device mapper volume %s of partition %s: %w", dmName, partition.Name, err)
 						}
 					}
 				}
 			} else {
-				mountPoints, err = getMountPoints(content.Name())
+				mountPoints, err = getMountPoints(partition.Name)
 				if err != nil {
-					return nil, fmt.Errorf("error on getting mount points for partition %s: %w", content.Name(), err)
+					return nil, fmt.Errorf("error on getting mount points for partition %s: %w", partition.Name, err)
 				}
 			}
 
@@ -124,7 +72,7 @@ func getPartitions(blockDeviceName string) ([]Partition, error) {
 				stat := syscall.Statfs_t{}
 
 				if err := syscall.Statfs(mountPoints[0].Path, &stat); err != nil {
-					return nil, fmt.Errorf("error on statfs syscall using path %s on partition %s: %w", mountPoints[0].Path, content.Name(), err)
+					return nil, fmt.Errorf("error on statfs syscall using path %s on partition %s: %w", mountPoints[0].Path, partition.Name, err)
 				}
 
 				if stat.Bsize < 0 {
@@ -146,40 +94,4 @@ func getPartitions(blockDeviceName string) ([]Partition, error) {
 	}
 
 	return partitions, nil
-}
-
-func getMountPoints(partitionName string) ([]MountPoint, error) {
-	var mountPoints []MountPoint
-
-	mounts, err := os.ReadFile("/proc/mounts")
-	if err != nil {
-		return nil, fmt.Errorf("error on reading mounts: %w", err)
-	}
-
-	mountsLines := strings.Split(string(mounts), "\n")
-	for _, line := range mountsLines {
-		columns := strings.Split(line, " ")
-		if columns[0] == "/dev/"+partitionName {
-			mountPoint := MountPoint{
-				Path:       columns[1],
-				Filesystem: columns[2],
-				Options:    []MountOption{},
-			}
-
-			options := strings.Split(columns[3], ",")
-
-			for _, option := range options {
-				if strings.Contains(option, "=") {
-					optionKeyValue := strings.Split(option, "=")
-					mountPoint.Options = append(mountPoint.Options, MountOption{optionKeyValue[0], optionKeyValue[1]})
-				} else {
-					mountPoint.Options = append(mountPoint.Options, MountOption{option, ""})
-				}
-			}
-
-			mountPoints = append(mountPoints, mountPoint)
-		}
-	}
-
-	return mountPoints, nil
 }
