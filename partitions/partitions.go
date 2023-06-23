@@ -10,6 +10,7 @@ import (
 	"syscall"
 )
 
+// Partition serves as a model for reflecting filesystem parameters such as their name, their size, ...
 type Partition struct {
 	Name           string       `json:"name"`
 	Size           uint64       `json:"size"`
@@ -19,6 +20,7 @@ type Partition struct {
 	MountPoints    []MountPoint `json:"mount_points"`
 }
 
+// getPartitions gathers information about all filesystems on the current system.
 func getPartitions(blockDeviceName string) ([]Partition, error) {
 	var partitions []Partition
 

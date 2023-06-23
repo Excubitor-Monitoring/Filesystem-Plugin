@@ -7,12 +7,14 @@ import (
 	"strings"
 )
 
+// BlockDevice serves as a model of a block device
 type BlockDevice struct {
 	Name       string      `json:"name"`
 	Size       uint64      `json:"size"`
 	Partitions []Partition `json:"partitions"`
 }
 
+// ParseBlockDevices gathers information about the block devices present in the current system.
 func ParseBlockDevices() ([]BlockDevice, error) {
 	blockDevices := make([]BlockDevice, 0)
 

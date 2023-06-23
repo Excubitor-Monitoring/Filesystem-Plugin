@@ -1,5 +1,6 @@
 package partitions
 
+// FSType is a representation of the linux kernel filesystem types.
 type FSType int64
 
 var (
@@ -89,6 +90,7 @@ var (
 	_XIAFS_SUPER_MAGIC    FSType = 0x012fd16d
 )
 
+// Name returns the human-readable name of the kernel filesystems.
 func (fsType FSType) Name() string {
 	switch fsType {
 	case ADFS_SUPER_MAGIC:

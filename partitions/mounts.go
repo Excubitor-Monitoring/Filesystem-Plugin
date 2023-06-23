@@ -6,14 +6,20 @@ import (
 	"strings"
 )
 
+// MountOption is a slice of exactly two strings. The first string is the key of the mount option, the second string
+// is the value. If there is no value for a given MountOption, the second string is just an empty string.
 type MountOption [2]string
 
+// MountPoint contains parameters typically present in unix mount points.
+// Those are Path, the path in which the device is mounted, Filesystem, a string representation of the filesystem
+// present in the device and Options, a slice of MountOption
 type MountPoint struct {
 	Path       string
 	Filesystem string
 	Options    []MountOption
 }
 
+// getMountPoints gathers information about mount points of a certain partition defined the argument partitionName.
 func getMountPoints(partitionName string) ([]MountPoint, error) {
 	var mountPoints []MountPoint
 
