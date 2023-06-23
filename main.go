@@ -48,7 +48,7 @@ func (p *PluginImpl) TickFunction() []shared.PluginMessage {
 func (p *PluginImpl) GetComponents() []modules.Component {
 	return []modules.Component{
 		{
-			TabName: "Filesystems",
+			TabName: "Statistics",
 			JSFile:  "index.js",
 			Tag:     "filesystem-usage",
 		},
