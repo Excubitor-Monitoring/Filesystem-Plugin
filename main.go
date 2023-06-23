@@ -2,6 +2,7 @@ package main
 
 import (
 	"Filesystem-Plugin/partitions"
+	"embed"
 	"encoding/json"
 	"github.com/Excubitor-Monitoring/Excubitor-Backend/pkg/shared"
 	"github.com/Excubitor-Monitoring/Excubitor-Backend/pkg/shared/modules"
@@ -45,7 +46,25 @@ func (p *PluginImpl) TickFunction() []shared.PluginMessage {
 }
 
 func (p *PluginImpl) GetComponents() []modules.Component {
-	return []modules.Component{}
+	return []modules.Component{
+		{
+			TabName: "Filesystems",
+			JSFile:  "index.js",
+			Tag:     "filesystem-usage",
+		},
+	}
+}
+
+//go:embed frontend
+var componentFiles embed.FS
+
+func (p *PluginImpl) GetComponentFile(path string) []byte {
+	content, err := componentFiles.ReadFile("frontend/" + path)
+	if err != nil {
+		return make([]byte, 0)
+	}
+
+	return content
 }
 
 var handshakeConfig = plugin.HandshakeConfig{

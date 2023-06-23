@@ -3,7 +3,7 @@ module Filesystem-Plugin
 go 1.20
 
 require (
-	github.com/Excubitor-Monitoring/Excubitor-Backend v0.0.0-20230615200217-c41fd6280098
+	github.com/Excubitor-Monitoring/Excubitor-Backend v0.0.0-20230623181419-a383eaf4caef
 	github.com/hashicorp/go-hclog v0.14.1
 	github.com/hashicorp/go-plugin v1.4.10
 )

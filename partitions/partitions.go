@@ -44,6 +44,9 @@ func getPartitions(blockDeviceName string) ([]Partition, error) {
 				return nil, fmt.Errorf("error on parsing size of partition %s: %w", blockDeviceName, err)
 			}
 
+			// Divide by block size
+			partition.Size /= 2
+
 			var mountPoints []MountPoint
 
 			holdersFolder, err := os.ReadDir("/sys/block/" + blockDeviceName + "/" + partition.Name + "/holders")
