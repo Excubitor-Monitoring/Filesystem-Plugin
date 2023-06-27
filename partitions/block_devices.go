@@ -16,6 +16,8 @@ type BlockDevice struct {
 
 // ParseBlockDevices gathers information about the block devices present in the current system.
 func ParseBlockDevices() ([]BlockDevice, error) {
+	logger.Trace("Parsing block devices...")
+
 	blockDevices := make([]BlockDevice, 0)
 
 	blockDevicesFolder, err := os.ReadDir("/sys/block")

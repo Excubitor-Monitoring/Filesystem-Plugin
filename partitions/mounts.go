@@ -21,6 +21,8 @@ type MountPoint struct {
 
 // getMountPoints gathers information about mount points of a certain partition defined the argument partitionName.
 func getMountPoints(partitionName string) ([]MountPoint, error) {
+	logger.Trace("Getting mount points...", "Partition", partitionName)
+
 	var mountPoints []MountPoint
 
 	mounts, err := os.ReadFile("/proc/mounts")

@@ -3,12 +3,20 @@ package partitions
 import (
 	"errors"
 	"fmt"
+	"github.com/hashicorp/go-hclog"
 	"io/fs"
 	"os"
 	"strconv"
 	"strings"
 	"syscall"
 )
+
+var logger = hclog.New(&hclog.LoggerOptions{
+	Level:       hclog.Trace,
+	Output:      os.Stderr,
+	DisableTime: true,
+	JSONFormat:  true,
+})
 
 // Partition serves as a model for reflecting filesystem parameters such as their name, their size, ...
 type Partition struct {
@@ -22,6 +30,8 @@ type Partition struct {
 
 // getPartitions gathers information about all filesystems on the current system.
 func getPartitions(blockDeviceName string) ([]Partition, error) {
+	logger.Trace("Getting partitions...", "block device", blockDeviceName)
+
 	var partitions []Partition
 
 	blockDeviceFolder, err := os.ReadDir("/sys/block/" + blockDeviceName)
