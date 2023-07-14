@@ -12,12 +12,17 @@ NPMI=install
 NPMBUILD=run build
 
 build-component:
-	make init-submodule
+	@echo "Building frontend components"
+	@make init-submodule
+	@make components/Filesystems/dist
+	mkdir -p frontend/
+	cp components/Filesystems/dist/index.js frontend/
+components/Filesystems/dist:
+	@echo "Building Filesystems component"
 	$(NPM) --cwd components/Filesystems/ $(NPMI)
 	$(NPM) --cwd components/Filesystems/ $(NPMBUILD)
-	mkdir -p frontend/
-	mv components/Filesystems/dist/index.js frontend/
 init-submodule:
+	@echo "Initializing git submodule"
 	git submodule update --init --recursive
 build:
 	make build-component
