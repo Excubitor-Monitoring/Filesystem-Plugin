@@ -13,3 +13,11 @@ This project can be built through the following command:
 make build
 ```
 
+For more information consult the Excubitor-Backend repository's wiki.
+
+## Copyright
+
+(c) Filesystem-Plugin 2023 Lucca Greschner
+
+SPDX-License-Identifier: GPL-3.0
+
